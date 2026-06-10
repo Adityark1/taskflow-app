@@ -60,14 +60,17 @@ export default function TaskList() {
           >
             <h3 style={{ marginBottom: '10px' }}>{task.title}</h3>
 
-            <p
-              style={{
-                color: '#94a3b8',
-                marginBottom: '8px',
-              }}
-            >
-              ⚪ Uncategorized
-            </p>
+           {task.category_name && (
+  <p
+    style={{
+      color: task.category_color || '#94a3b8',
+      marginBottom: '8px',
+      fontWeight: '600',
+    }}
+  >
+    {task.category_name}
+  </p>
+)}
 
             <p
               style={{

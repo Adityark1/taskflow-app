@@ -7,7 +7,7 @@ import {
 } from "react-router-dom";
 
 import "./App.css";
-
+import CategoryDetailsPage from "./pages/CategoryDetailsPage";
 import TasksPage from "./pages/TasksPage";
 import CategoriesPage from "./pages/CategoriesPage";
 import DashboardPage from "./pages/DashboardPage";
@@ -29,13 +29,19 @@ export default function App() {
   </nav>
 
   <main className="content">
-    <Routes>
-      <Route path="/" element={<Navigate to="/tasks" />} />
-      <Route path="/tasks" element={<TasksPage />} />
-      <Route path="/categories" element={<CategoriesPage />} />
-      <Route path="/dashboard" element={<DashboardPage />} />
-      <Route path="/profile" element={<ProfilePage />} />
-    </Routes>
+<Routes>
+  <Route path="/" element={<Navigate to="/tasks" />} />
+  <Route path="/tasks" element={<TasksPage />} />
+  <Route path="/categories" element={<CategoriesPage />} />
+
+  <Route
+    path="/categories/:id"
+    element={<CategoryDetailsPage />}
+  />
+
+  <Route path="/dashboard" element={<DashboardPage />} />
+  <Route path="/profile" element={<ProfilePage />} />
+</Routes>
   </main>
 </div>
    

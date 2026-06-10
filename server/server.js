@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 
 const tasksRouter = require('./routes/tasks');
+const categoriesRouter = require('./routes/categories');
 
 const app = express();
 
@@ -13,6 +14,7 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/tasks', tasksRouter);
+app.use('/api/categories', categoriesRouter);
 
 const PORT = 4000;
 
