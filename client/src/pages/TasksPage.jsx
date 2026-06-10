@@ -1,11 +1,31 @@
-import TaskList from '../components/tasks/TaskList';
-import TaskForm from '../components/tasks/TaskForm';
+import TaskList from '../components/tasks/taskList';
+import TaskForm from '../components/tasks/taskForm';
 
 export default function TasksPage() {
   return (
     <div>
-      <h1>Task Management</h1>
-      <TaskForm onTaskAdded={() => window.location.reload()} />
+      <div
+        style={{
+          marginBottom: '40px',
+        }}
+      >
+        <h2
+          style={{
+            fontSize: '2rem',
+            marginBottom: '20px',
+          }}
+        >
+          What needs to be done today?
+        </h2>
+
+        <TaskForm onTaskAdded={() => window.location.reload()} />
+      </div>
+
+      
+      
+      
+
+
       <TaskList />
     </div>
   );
