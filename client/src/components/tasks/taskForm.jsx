@@ -21,16 +21,20 @@ export default function TaskForm({ onTaskAdded }) {
     recognition.start();
 
     recognition.onresult = (event) => {
-  const transcript = event.results[0][0].transcript.trim();
+      const transcript = event.results[0][0].transcript.trim();
 
-  const formatted =
-    transcript.charAt(0).toUpperCase() + transcript.slice(1);
+      const formatted =
+        transcript.charAt(0).toUpperCase() +
+        transcript.slice(1);
 
-  setTitle(formatted);
-};
+      setTitle(formatted);
+    };
 
     recognition.onerror = (event) => {
-      console.error('Speech recognition error:', event.error);
+      console.error(
+        'Speech recognition error:',
+        event.error
+      );
     };
   };
 
@@ -40,13 +44,24 @@ export default function TaskForm({ onTaskAdded }) {
     if (!title.trim()) return;
 
     try {
-      await fetch('http://localhost:4000/api/tasks', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ title }),
-      });
+      const res = await fetch(
+        'http://localhost:4000/api/tasks',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            title: title.trim(),
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error(
+          `Server responded with ${res.status}`
+        );
+      }
 
       setTitle('');
 
@@ -54,7 +69,10 @@ export default function TaskForm({ onTaskAdded }) {
         onTaskAdded();
       }
     } catch (error) {
-      console.error('Error creating task:', error);
+      console.error(
+        'Error creating task:',
+        error
+      );
     }
   };
 
