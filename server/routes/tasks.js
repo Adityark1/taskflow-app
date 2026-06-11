@@ -12,17 +12,39 @@ router.get('/', (req, res) => {
     }
 });
 
-// CREATE TASK WITH METADATA (Hooked up to your TaskForm!)
+// CREATE TASK WITH METADATA (Perfect alignment with your new schema!)
 router.post('/', (req, res) => {
     try {
         const { title, priority, category } = req.body;
 
+        if (!title) {
+            return res.status(400).json({ error: 'Title is required' });
+        }
+
+        // Silent backend fallbacks for the extra columns
+        const description = '';
+        const status = 'To Do';
+        const finalPriority = priority || 'Medium';
+        const finalCategory = category || 'General';
+        const due_date = '';
+        const due_time = '';
+        const repeat_daily = 0;
+
         const stmt = db.prepare(`
-            INSERT INTO tasks (title, priority, category)
-            VALUES (?, ?, ?)
+            INSERT INTO tasks (title, description, status, priority, category, due_date, due_time, repeat_daily)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `);
 
-        const result = stmt.run(title, priority || 'Medium', category || 'General');
+        const result = stmt.run(
+            title.trim(),
+            description,
+            status,
+            finalPriority,
+            finalCategory,
+            due_date,
+            due_time,
+            repeat_daily
+        );
 
         const newTask = db.prepare(`
             SELECT * FROM tasks WHERE id = ?
@@ -37,16 +59,17 @@ router.post('/', (req, res) => {
 // UPDATE TASK FLOW (Hooked up to your TaskList advanced modal!)
 router.patch('/:id', (req, res) => {
     try {
-        const { title, status, priority, category, due_date, due_time, repeat_daily } = req.body;
+        const { title, status, priority, category, due_date, due_time, repeat_daily, description } = req.body;
         
         const stmt = db.prepare(`
             UPDATE tasks 
-            SET title = ?, status = ?, priority = ?, category = ?, due_date = ?, due_time = ?, repeat_daily = ?
+            SET title = ?, description = ?, status = ?, priority = ?, category = ?, due_date = ?, due_time = ?, repeat_daily = ?
             WHERE id = ?
         `);
 
         stmt.run(
             title, 
+            description || '',
             status, 
             priority, 
             category, 

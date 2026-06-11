@@ -4,6 +4,7 @@ import TaskForm from '../components/tasks/taskForm';
 
 export default function TasksPage() {
   const [tasks, setTasks] = useState([]);
+  const [categories, setCategories] = useState([]); // Added state to track live categories
   const [currentTime, setCurrentTime] = useState(new Date());
 
   const fetchTasks = async () => {
@@ -16,8 +17,22 @@ export default function TasksPage() {
     }
   };
 
+  // Added function to pull categories live from your SQLite database
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch('http://localhost:4000/api/categories');
+      if (res.ok) {
+        const data = await res.json();
+        setCategories(data);
+      }
+    } catch (err) {
+      console.error('Error fetching categories:', err);
+    }
+  };
+
   useEffect(() => {
     fetchTasks();
+    fetchCategories(); // Fetch categories right when the page mounts
     
     // Global continuous clock ticking for the bottom left viewport display
     const timer = setInterval(() => {
@@ -79,7 +94,8 @@ export default function TasksPage() {
             marginBottom: '40px'
           }}
         >
-          <TaskForm onTaskAdded={fetchTasks} />
+          {/* FIXED: Passing down the live categories array to the form component */}
+          <TaskForm onTaskAdded={fetchTasks} categories={categories} />
         </div>
 
         {/* Dynamic Display Matrix Grid */}

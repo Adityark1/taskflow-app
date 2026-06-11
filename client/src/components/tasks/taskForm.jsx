@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 
-export default function TaskForm({ onTaskAdded }) {
+export default function TaskForm({ onTaskAdded, categories = [] }) {
   const [title, setTitle] = useState('');
   const [priority, setPriority] = useState('Medium');
   const [category, setCategory] = useState('General');
@@ -81,7 +81,9 @@ export default function TaskForm({ onTaskAdded }) {
     High: { color: '#ef4444' },
   };
 
-  const categoriesList = ['General', 'Work', 'Personal', 'Health'];
+  const activeCategories = categories.length > 0 
+    ? categories.map(c => c.name) 
+    : ['General', 'Work', 'Personal', 'Health'];
 
   return (
     <form 
@@ -92,15 +94,27 @@ export default function TaskForm({ onTaskAdded }) {
         gap: '22px', 
         width: '100%',
         position: 'relative',
-        /* CRITICAL VISUAL FIXES:
-          1. Dynamic padding-bottom pushes the task list grid down smoothly when open.
-          2. Elevating the z-index tells the browser to render the entire form block on top of the task list layer.
-        */
-        paddingBottom: isDropdownOpen ? '160px' : '0px',
+        paddingBottom: isDropdownOpen ? '210px' : '0px',
         zIndex: isDropdownOpen ? 500 : 10,
         transition: 'padding-bottom 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
       }}
     >
+      {/* CRITICAL ENGINE OVERRIDE CODE: 
+        Injecting explicit style rules into the DOM to force WebKit scrollbar persistence
+      */}
+      <style>{`
+        .forced-scrollbar::-webkit-scrollbar {
+          width: 6px !important;
+          display: block !important;
+        }
+        .forced-scrollbar::-webkit-scrollbar-track {
+          background: transparent !important;
+        }
+        .forced-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.3) !important;
+          border-radius: 99px !important;
+        }
+      `}</style>
       
       {/* PRIMARY TASK TEXT INPUT ROW */}
       <div style={{ display: 'flex', gap: '14px', alignItems: 'center', width: '100%' }}>
@@ -284,6 +298,7 @@ export default function TaskForm({ onTaskAdded }) {
 
           {/* FLOATING LIST OPTIONS TRAY */}
           <div
+            className="forced-scrollbar" // Added custom class link hook here
             style={{
               position: 'absolute',
               top: 'calc(100% + 8px)',
@@ -296,11 +311,14 @@ export default function TaskForm({ onTaskAdded }) {
               borderRadius: '14px',
               padding: '6px',
               boxShadow: '0 20px 40px rgba(0, 0, 0, 0.6)',
-              /* Elevated index ensures options display on top of anything underneath */
               zIndex: 1000,
               display: 'flex',
               flexDirection: 'column',
               gap: '2px',
+              
+              maxHeight: '130px',          // Slightly tightened to guarantee overflow triggers immediately
+              overflowY: 'scroll',         // Locked on layout execution track
+              boxSizing: 'border-box',
               
               opacity: isDropdownOpen ? 1 : 0,
               transform: isDropdownOpen ? 'translateY(0) scale(1)' : 'translateY(-6px) scale(0.96)',
@@ -308,7 +326,7 @@ export default function TaskForm({ onTaskAdded }) {
               transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
             }}
           >
-            {categoriesList.map((cat) => {
+            {activeCategories.map((cat) => {
               const isActive = category === cat;
               return (
                 <div
