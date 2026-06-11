@@ -2,7 +2,11 @@ const express = require('express');
 const cors = require('cors');
 
 const tasksRouter = require('./routes/tasks');
-const categoriesRouter = require('./routes/categories'); // 1. Import the new router
+const categoriesRouter = require('./routes/categories'); 
+const profileRouter = require('./routes/profile'); 
+
+// FIXED: Pointing exactly to your folder structure
+const db = require('./db/database'); 
 
 const app = express();
 
@@ -14,7 +18,8 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/tasks', tasksRouter);
-app.use('/api/categories', categoriesRouter); // 2. Mount it to /api/categories
+app.use('/api/categories', categoriesRouter); 
+app.use('/api/profile', profileRouter); 
 
 const PORT = 4000;
 
