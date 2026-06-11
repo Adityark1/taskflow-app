@@ -1,10 +1,10 @@
-// server/db/database.js
 const Database = require('better-sqlite3');
 const fs = require('fs');
 const path = require('path');
 
-// Initialize the database file
-const db = new Database('taskflow.db', { verbose: console.log });
+// FIXED: Resolves the absolute path to make sure it always references 'server/db/taskflow.db'
+const dbPath = path.join(__dirname, 'taskflow.db');
+const db = new Database(dbPath, { verbose: console.log });
 
 // Automatically apply the schema from schema.sql
 const schemaPath = path.join(__dirname, 'schema.sql');
