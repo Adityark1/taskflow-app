@@ -13,7 +13,22 @@ import CategoriesPage from "./pages/CategoriesPage";
 import DashboardPage from "./pages/DashboardPage";
 import ProfilePage from "./pages/ProfilePage";
 
+// 1. IMPORT THE GLOBAL WIDGET: Bring in your premium AI panel
+import AiFloatingWidget from "./components/AiFloatingWidget";
+
 export default function App() {
+  
+  // 2. THE INTELLIGENT ROUTER BRIDGE:
+  // When the AI processes a command, it runs this function. If the user happens to 
+  // be sitting on the /dashboard route, it triggers the hidden DOM listener we added 
+  // to fetch fresh backend metrics without forcing a heavy browser page reload.
+  const handleGlobalAIRefresh = () => {
+    const dashboardTrigger = document.getElementById("dashboard-refresh-trigger");
+    if (dashboardTrigger) {
+      dashboardTrigger.click();
+    }
+  };
+
   return (
     <Router>
       <div className="app-container">
@@ -39,6 +54,9 @@ export default function App() {
             <Route path="/profile" element={<ProfilePage />} />
           </Routes>
         </main>
+
+        {/* 3. MOUNT GLOBALLY: Locks the AI portal button to the bottom-right viewport across all routes */}
+        <AiFloatingWidget onRefreshDashboard={handleGlobalAIRefresh} />
       </div>
     </Router>
   );

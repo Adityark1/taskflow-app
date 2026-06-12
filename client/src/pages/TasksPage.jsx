@@ -4,7 +4,7 @@ import TaskForm from '../components/tasks/taskForm';
 
 export default function TasksPage() {
   const [tasks, setTasks] = useState([]);
-  const [categories, setCategories] = useState([]); // Added state to track live categories
+  const [categories, setCategories] = useState([]); 
   const [currentTime, setCurrentTime] = useState(new Date());
 
   const fetchTasks = async () => {
@@ -17,7 +17,6 @@ export default function TasksPage() {
     }
   };
 
-  // Added function to pull categories live from your SQLite database
   const fetchCategories = async () => {
     try {
       const res = await fetch('http://localhost:4000/api/categories');
@@ -32,14 +31,20 @@ export default function TasksPage() {
 
   useEffect(() => {
     fetchTasks();
-    fetchCategories(); // Fetch categories right when the page mounts
+    fetchCategories(); 
     
-    // Global continuous clock ticking for the bottom left viewport display
+    // 🚀 LISTEN TO THE AI LIVE UPDATES INSTANTLY
+    window.addEventListener("taskflow-db-update", fetchTasks);
+    
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
     
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(timer);
+      // Clean up event listener when page unmounts
+      window.removeEventListener("taskflow-db-update", fetchTasks);
+    };
   }, []);
 
   const formatGlobalDateTime = () => {
@@ -56,7 +61,6 @@ export default function TasksPage() {
 
   return (
     <div style={{ position: 'relative', minHeight: '80vh', pb: '100px' }}>
-      {/* Immersive Glass Backdrops */}
       <div style={{ position: 'absolute', top: '-10%', left: '20%', width: '650px', height: '650px', borderRadius: '50%', background: 'rgba(168, 85, 247, 0.07)', filter: 'blur(130px)', pointerEvents: 'none', zIndex: 0 }} />
       <div style={{ position: 'absolute', top: '40%', right: '5%', width: '450px', height: '450px', borderRadius: '50%', background: 'rgba(59, 130, 246, 0.05)', filter: 'blur(110px)', pointerEvents: 'none', zIndex: 0 }} />
 
@@ -81,7 +85,6 @@ export default function TasksPage() {
           </p>
         </div>
 
-        {/* Input Card Container */}
         <div 
           style={{ 
             background: 'rgba(30, 41, 59, 0.25)',
@@ -94,15 +97,12 @@ export default function TasksPage() {
             marginBottom: '40px'
           }}
         >
-          {/* FIXED: Passing down the live categories array to the form component */}
           <TaskForm onTaskAdded={fetchTasks} categories={categories} />
         </div>
 
-        {/* Dynamic Display Matrix Grid */}
         <TaskList tasks={tasks} refreshTasks={fetchTasks} />
       </div>
 
-      {/* FIXED BOTTOM LEFT SCREEN DATE AND TIME WIDGET */}
       <div
         style={{
           position: 'fixed',

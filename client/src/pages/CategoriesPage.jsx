@@ -55,6 +55,68 @@ export default function CategoriesPage() {
 
   useEffect(() => {
     fetchData();
+
+    // 🚀 INSTANT REAL-TIME ELECTRONIC SYNCHRONIZATION EAR
+    const handleInstantSyncEvent = (event) => {
+      const { action, task, category, taskId } = event.detail;
+      console.log(`⚡ Categories UI intercepting operational broadcast: ${action}`);
+
+      switch (action) {
+        case 'CREATE_CATEGORY':
+          if (category) {
+            setCategories((prev) => {
+              if (prev.some(c => c.id === category.id)) return prev;
+              return [...prev, category];
+            });
+          }
+          break;
+
+        case 'UPDATE_CATEGORY':
+          if (category) {
+            setCategories((prev) => prev.map(c => c.id === category.id ? category : c));
+            setSelectedCategory((current) => {
+              if (current && current.id === category.id) {
+                setEditName(category.name);
+                setEditColor(category.color);
+                return category;
+              }
+              return current;
+            });
+          }
+          break;
+
+        case 'CREATE_TASK':
+          if (task) {
+            setAllTasks((prev) => [...prev, task]);
+          }
+          break;
+
+        case 'UPDATE_TASK':
+        case 'COMPLETE_TASK':
+          if (task) {
+            setAllTasks((prev) => prev.map(t => t.id === task.id ? task : t));
+            setActiveTaskToEdit((current) => (current && current.id === task.id ? task : current));
+          }
+          break;
+
+        case 'DELETE_TASK':
+          if (taskId) {
+            setAllTasks((prev) => prev.filter(t => t.id !== Number(taskId) && t.title !== taskId));
+            setActiveTaskToEdit((current) => (current && (current.id === Number(taskId) || current.title === taskId) ? null : current));
+          }
+          break;
+
+        default:
+          // Catch-all fallback validation to prevent drift
+          fetchData();
+          break;
+      }
+    };
+
+    window.addEventListener('taskflow-db-update', handleInstantSyncEvent);
+    return () => {
+      window.removeEventListener('taskflow-db-update', handleInstantSyncEvent);
+    };
   }, []);
 
   const handleVoiceListen = () => {
@@ -95,7 +157,14 @@ export default function CategoriesPage() {
       });
 
       if (res.ok) {
+        const data = await res.json();
         setNewCategoryName('');
+        
+        // Dispatch local event if added manually to update dropdown hooks instantly
+        const updateEvent = new CustomEvent('taskflow-db-update', { 
+          detail: { action: 'CREATE_CATEGORY', category: data } 
+        });
+        window.dispatchEvent(updateEvent);
         await fetchData();
       }
     } catch (err) {
@@ -152,13 +221,15 @@ export default function CategoriesPage() {
 
   const handleSaveCategoryEdits = async () => {
     try {
-      await fetch(`http://localhost:4000/api/categories/${selectedCategory.id}`, {
+      const res = await fetch(`http://localhost:4000/api/categories/${selectedCategory.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: editName, color: editColor })
       });
-      fetchData();
-      closeExpansionModal();
+      if (res.ok) {
+        fetchData();
+        closeExpansionModal();
+      }
     } catch (err) {
       console.error(err);
     }
@@ -291,10 +362,12 @@ export default function CategoriesPage() {
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'translateY(-6px)';
                 e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.12)';
+                e.currentTarget.style.boxShadow = `0 15px 35px rgba(0, 0, 0, 0.35), 0 0 20px ${cat.color}15`;
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = 'translateY(0)';
                 e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.05)';
+                e.currentTarget.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.2)';
               }}
             >
               <div>
@@ -321,8 +394,8 @@ export default function CategoriesPage() {
                 </div>
 
                 <div style={{ display: 'flex', gap: '6px' }}>
-                  <span style={{ fontSize: '0.72rem', color: '#94a3b8', background: 'rgba(255,255,255,0.04)', padding: '4px 10px', borderRadius: '6px', fontWeight: '500' }}>
-                    {associatedCount} Active Tasks
+                  <span style={{ fontSize: '0.72rem', color: '#94a3b8', background: 'rgba(255,255,255,0.04)', padding: '4px 10px', borderRadius: '6px', fontWeight: '600', letterSpacing: '0.02em' }}>
+                    {associatedCount} {associatedCount === 1 ? 'Task' : 'Tasks'}
                   </span>
                 </div>
               </div>
@@ -565,7 +638,7 @@ export default function CategoriesPage() {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(15,23,42,0.3)', padding: '14px 18px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.04)' }}>
+              <div style={{ display: 'flex', justifycontent: 'space-between', alignItems: 'center', background: 'rgba(15,23,42,0.3)', padding: '14px 18px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.04)' }}>
                 <div style={{ flex: 1 }}>
                   <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#ffffff', display: 'block' }}>Repeat Flow Everyday</span>
                   <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Runs infinitely until disabled</span>

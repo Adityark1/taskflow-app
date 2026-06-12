@@ -8,6 +8,26 @@ export default function TaskForm({ onTaskAdded, categories = [] }) {
   
   const dropdownRef = useRef(null);
 
+  // 🚀 INSTANT REAL-TIME SYSTEM ENGINE SYNCHRONIZATION EAR
+  useEffect(() => {
+    const handleInstantSyncEvent = (event) => {
+      const { action } = event.detail;
+      
+      // If an external vector or AI layer adds/mutates a task, instantly refresh local collections
+      if (action === 'CREATE_TASK' || action === 'UPDATE_TASK' || action === 'DELETE_TASK') {
+        console.log(`⚡ TaskForm intercepting operational broadcast: ${action}`);
+        if (onTaskAdded) {
+          onTaskAdded();
+        }
+      }
+    };
+
+    window.addEventListener('taskflow-db-update', handleInstantSyncEvent);
+    return () => {
+      window.removeEventListener('taskflow-db-update', handleInstantSyncEvent);
+    };
+  }, [onTaskAdded]);
+
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -65,6 +85,14 @@ export default function TaskForm({ onTaskAdded, categories = [] }) {
       if (!res.ok) {
         throw new Error(`Server responded with ${res.status}`);
       }
+
+      const createdTask = await res.json();
+
+      // Dispatch tracking broadcast across the DOM thread so metrics cards sync instantly
+      const updateEvent = new CustomEvent('taskflow-db-update', {
+        detail: { action: 'CREATE_TASK', task: createdTask }
+      });
+      window.dispatchEvent(updateEvent);
 
       setTitle('');
       if (onTaskAdded) {
@@ -298,7 +326,7 @@ export default function TaskForm({ onTaskAdded, categories = [] }) {
 
           {/* FLOATING LIST OPTIONS TRAY */}
           <div
-            className="forced-scrollbar" // Added custom class link hook here
+            className="forced-scrollbar"
             style={{
               position: 'absolute',
               top: 'calc(100% + 8px)',
@@ -316,8 +344,8 @@ export default function TaskForm({ onTaskAdded, categories = [] }) {
               flexDirection: 'column',
               gap: '2px',
               
-              maxHeight: '130px',          // Slightly tightened to guarantee overflow triggers immediately
-              overflowY: 'scroll',         // Locked on layout execution track
+              maxHeight: '130px',
+              overflowY: 'scroll',
               boxSizing: 'border-box',
               
               opacity: isDropdownOpen ? 1 : 0,

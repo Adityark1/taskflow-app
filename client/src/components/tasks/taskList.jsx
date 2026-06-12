@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function TaskList({ tasks = [], refreshTasks }) {
   const [selectedTask, setSelectedTask] = useState(null);
@@ -14,12 +14,61 @@ export default function TaskList({ tasks = [], refreshTasks }) {
   const [editDueTime, setEditDueTime] = useState('');
   const [editRepeat, setEditRepeat] = useState(false);
 
-  // INSTANT IN-PLACE ONE-CLICK COMPLETION
+  // 🚀 INSTANT REAL-TIME ELECTRONIC SYNCHRONIZATION EAR
+  useEffect(() => {
+    const handleInstantSyncEvent = (event) => {
+      const { action, task, taskId } = event.detail;
+      console.log(`⚡ TaskList UI intercepting operational broadcast: ${action}`);
+
+      // Invoke the state refresh handle attached by parent dashboard structures
+      if (refreshTasks) {
+        refreshTasks();
+      }
+
+      // Live update matching elements inside open workflow modal view panels
+      if (task && selectedTask && selectedTask.id === task.id) {
+        setEditTitle(task.title || '');
+        setEditCategory(task.category || 'General');
+        setEditStatus(task.status || 'To Do');
+        setEditPriority(task.priority || 'Medium');
+        setEditDueDate(task.due_date || '');
+        
+        if (task.due_time) {
+          if (task.due_time.toLowerCase().includes('am') || task.due_time.toLowerCase().includes('pm')) {
+            const parsedTime = new Date(`1970-01-01 ${task.due_time}`);
+            if (!isNaN(parsedTime.getTime())) {
+              const hh = String(parsedTime.getHours()).padStart(2, '0');
+              const mm = String(parsedTime.getMinutes()).padStart(2, '0');
+              setEditDueTime(`${hh}:${mm}`);
+            }
+          } else {
+            setEditDueTime(task.due_time.substring(0, 5));
+          }
+        } else {
+          setEditDueTime('');
+        }
+        setEditRepeat(task.repeat_daily === 1 || task.repeat_daily === true);
+      }
+
+      // Auto-collapse open editing windows if the underlying row is cleared by AI vectors
+      if (action === 'DELETE_TASK' && taskId && selectedTask) {
+        if (selectedTask.id === Number(taskId) || selectedTask.title === taskId) {
+          closeExpansionModal();
+        }
+      }
+    };
+
+    window.addEventListener('taskflow-db-update', handleInstantSyncEvent);
+    return () => {
+      window.removeEventListener('taskflow-db-update', handleInstantSyncEvent);
+    };
+  }, [selectedTask, refreshTasks]);
+
   const toggleCompleteQuick = async (task, e) => {
     e.stopPropagation();
     const updatedStatus = task.status === 'Completed' ? 'To Do' : 'Completed';
     try {
-      await fetch(`http://localhost:4000/api/tasks/${task.id}`, {
+      const response = await fetch(`http://localhost:4000/api/tasks/${task.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -32,7 +81,18 @@ export default function TaskList({ tasks = [], refreshTasks }) {
           repeat_daily: task.repeat_daily || 0
         })
       });
-      if (refreshTasks) refreshTasks();
+
+      if (response.ok) {
+        const updatedTask = await response.json();
+        
+        // Dispatch event locally to propagate live visual updates across all active view panels
+        const updateEvent = new CustomEvent('taskflow-db-update', { 
+          detail: { action: 'COMPLETE_TASK', task: updatedTask } 
+        });
+        window.dispatchEvent(updateEvent);
+
+        if (refreshTasks) refreshTasks();
+      }
     } catch (err) {
       console.error('Error instantly toggle-updating item status:', err);
     }
@@ -48,9 +108,26 @@ export default function TaskList({ tasks = [], refreshTasks }) {
     setEditStatus(task.status || 'To Do');
     setEditPriority(task.priority || 'Medium');
     setEditDueDate(task.due_date || '');
-    setEditDueTime(task.due_time || '');
-    setEditRepeat(task.repeat_daily === 1 || task.repeat_daily === true);
+    
+    // 🕒 CLEAN INPUT FORM TIME NORMALIZATION MAPPING
+    if (task.due_time) {
+      if (task.due_time.toLowerCase().includes('am') || task.due_time.toLowerCase().includes('pm')) {
+        const parsedTime = new Date(`1970-01-01 ${task.due_time}`);
+        if (!isNaN(parsedTime.getTime())) {
+          const hh = String(parsedTime.getHours()).padStart(2, '0');
+          const mm = String(parsedTime.getMinutes()).padStart(2, '0');
+          setEditDueTime(`${hh}:${mm}`);
+        } else {
+          setEditDueTime('');
+        }
+      } else {
+        setEditDueTime(task.due_time.substring(0, 5));
+      }
+    } else {
+      setEditDueTime('');
+    }
 
+    setEditRepeat(task.repeat_daily === 1 || task.repeat_daily === true);
     setTimeout(() => setIsExpanded(true), 20);
   };
 
@@ -64,7 +141,7 @@ export default function TaskList({ tasks = [], refreshTasks }) {
 
   const handleUpdateSave = async () => {
     try {
-      await fetch(`http://localhost:4000/api/tasks/${selectedTask.id}`, {
+      const response = await fetch(`http://localhost:4000/api/tasks/${selectedTask.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -77,8 +154,18 @@ export default function TaskList({ tasks = [], refreshTasks }) {
           repeat_daily: editRepeat ? 1 : 0
         })
       });
-      if (refreshTasks) refreshTasks();
-      closeExpansionModal();
+
+      if (response.ok) {
+        const updatedTask = await response.json();
+        
+        const updateEvent = new CustomEvent('taskflow-db-update', { 
+          detail: { action: 'UPDATE_TASK', task: updatedTask } 
+        });
+        window.dispatchEvent(updateEvent);
+
+        if (refreshTasks) refreshTasks();
+        closeExpansionModal();
+      }
     } catch (err) {
       console.error('Failed saving edits:', err);
     }
@@ -87,11 +174,19 @@ export default function TaskList({ tasks = [], refreshTasks }) {
   const handleDelete = async (id, e) => {
     if (e) e.stopPropagation();
     try {
-      await fetch(`http://localhost:4000/api/tasks/${id}`, {
+      const response = await fetch(`http://localhost:4000/api/tasks/${id}`, {
         method: 'DELETE',
       });
-      if (refreshTasks) refreshTasks();
-      closeExpansionModal();
+
+      if (response.ok) {
+        const updateEvent = new CustomEvent('taskflow-db-update', { 
+          detail: { action: 'DELETE_TASK', taskId: id } 
+        });
+        window.dispatchEvent(updateEvent);
+
+        if (refreshTasks) refreshTasks();
+        closeExpansionModal();
+      }
     } catch (error) {
       console.error('Error deleting task:', error);
     }
@@ -109,7 +204,6 @@ export default function TaskList({ tasks = [], refreshTasks }) {
     High: { color: '#ef4444' },
   };
 
-  // Helper function to turn '2026-06-11' into something readable like 'Jun 11'
   const formatCardDate = (dateStr) => {
     if (!dateStr) return '';
     const date = new Date(dateStr);
@@ -117,11 +211,14 @@ export default function TaskList({ tasks = [], refreshTasks }) {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
   };
 
-  // Helper function to turn military time '14:30' into standard '2:30 PM'
   const formatCardTime = (timeStr) => {
     if (!timeStr) return '';
-    const [hour, minute] = timeStr.split(':');
+    const parts = timeStr.split(':');
+    if(parts.length < 2) return timeStr;
+    const hour = parts[0];
+    const minute = parts[1].substring(0,2);
     const H = parseInt(hour, 10);
+    if (isNaN(H)) return timeStr;
     const suffix = H >= 12 ? 'PM' : 'AM';
     const standardHour = H % 12 || 12;
     return `${standardHour}:${minute} ${suffix}`;
@@ -145,7 +242,7 @@ export default function TaskList({ tasks = [], refreshTasks }) {
                 padding: '24px',
                 borderRadius: '24px',
                 border: '1px solid rgba(255, 255, 255, 0.05)',
-                minHeight: '175px', // slightly increased to fit deadlines nicely
+                minHeight: '175px',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
@@ -198,13 +295,11 @@ export default function TaskList({ tasks = [], refreshTasks }) {
                   </span>
                 </div>
                 
-                {/* CONFIG DETAILS ROW (Category & Dynamic Deadline Badges) */}
                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
                   <span style={{ fontSize: '0.72rem', color: '#94a3b8', background: 'rgba(255,255,255,0.04)', padding: '4px 8px', borderRadius: '6px' }}>
                     {task.category || 'General'}
                   </span>
 
-                  {/* DYNAMIC DEADLINE WIDGET DISPLAY */}
                   {(task.due_date || task.due_time) && (
                     <span 
                       style={{ 
@@ -239,7 +334,6 @@ export default function TaskList({ tasks = [], refreshTasks }) {
         })}
       </div>
 
-      {/* POPUP ADVANCED EXPANSION VIEW */}
       {selectedTask && originRect && (
         <div
           onClick={closeExpansionModal}
